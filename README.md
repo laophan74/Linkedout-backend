@@ -90,6 +90,14 @@ Authorization: Bearer <token>
 
 Token is returned on login/signup and valid for 7 days.
 
+## Test Credentials
+
+After running `npm run dev` and seeding the database with `node seed.js`:
+- **Username**: guest
+- **Password**: guest123
+
+Or use any of: john_dev, sarah_design, mike_pm, emma_marketing (all with password: password123)
+
 ## Deployment
 
 ### Vercel
