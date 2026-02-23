@@ -1,25 +1,27 @@
+/**
+ * Chat Model
+ * Represents a chat/conversation between users
+ */
+
 import mongoose from 'mongoose'
 
 const chatSchema = new mongoose.Schema(
   {
-    users: [
+    participants: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true,
       },
     ],
-    lastMsg: {
-      type: String,
-      default: '',
-    },
-    lastMsgTime: {
-      type: Date,
-      default: Date.now,
-    },
-    lastMsgSender: {
+    messages: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message',
+      },
+    ],
+    lastMessage: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Message',
     },
   },
   {

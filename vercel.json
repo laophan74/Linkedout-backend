@@ -1,15 +1,16 @@
 {
   "version": 2,
   "buildCommand": "npm install",
+  "installCommand": "npm install",
   "env": {
     "MONGODB_URI": "@mongodb_uri",
     "JWT_SECRET": "@jwt_secret",
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "CORS_ORIGIN": "@cors_origin"
   },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+  "functions": {
+    "src/server.js": {
+      "runtime": "nodejs18.x"
     }
-  ]
+  }
 }

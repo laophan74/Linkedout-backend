@@ -1,11 +1,11 @@
 import 'dotenv/config'
 import mongoose from 'mongoose'
-import { User } from './models/User.js'
-import { Post } from './models/Post.js'
-import { Comment } from './models/Comment.js'
-import { Chat } from './models/Chat.js'
-import { Message } from './models/Message.js'
-import { Activity } from './models/Activity.js'
+import { User } from './src/models/User.js'
+import { Post } from './src/models/Post.js'
+import { Comment } from './src/models/Comment.js'
+import { Chat } from './src/models/Chat.js'
+import { Message } from './src/models/Message.js'
+import { Activity } from './src/models/Activity.js'
 
 async function seedDatabase() {
   try {
@@ -196,50 +196,50 @@ async function seedDatabase() {
     await Message.create([
       {
         chatId: chats[0]._id,
-        from: users[1]._id,
-        to: users[0]._id,
+        senderId: users[1]._id,
+        recipientId: users[0]._id,
         txt: 'Hey! Did you see my last project?',
       },
       {
         chatId: chats[0]._id,
-        from: users[0]._id,
-        to: users[1]._id,
+        senderId: users[0]._id,
+        recipientId: users[1]._id,
         txt: 'Yes! It looks amazing! Great work on the UI.',
       },
       {
         chatId: chats[0]._id,
-        from: users[1]._id,
-        to: users[0]._id,
+        senderId: users[1]._id,
+        recipientId: users[0]._id,
         txt: 'Thanks! Want to collaborate on something?',
       },
       {
         chatId: chats[0]._id,
-        from: users[0]._id,
-        to: users[1]._id,
+        senderId: users[0]._id,
+        recipientId: users[1]._id,
         txt: 'Definitely! I\'d love to work together.',
       },
       {
         chatId: chats[0]._id,
-        from: users[1]._id,
-        to: users[0]._id,
+        senderId: users[1]._id,
+        recipientId: users[0]._id,
         txt: 'Sounds good! Let\'s discuss the project details.',
       },
       {
         chatId: chats[1]._id,
-        from: users[2]._id,
-        to: users[0]._id,
+        senderId: users[2]._id,
+        recipientId: users[0]._id,
         txt: 'Hi! I loved your recent post about the new features.',
       },
       {
         chatId: chats[1]._id,
-        from: users[0]._id,
-        to: users[2]._id,
+        senderId: users[0]._id,
+        recipientId: users[2]._id,
         txt: 'Thank you! I\'m really excited about this update.',
       },
       {
         chatId: chats[1]._id,
-        from: users[2]._id,
-        to: users[0]._id,
+        senderId: users[2]._id,
+        recipientId: users[0]._id,
         txt: 'The design looks fantastic! Can we schedule a call?',
       },
     ])

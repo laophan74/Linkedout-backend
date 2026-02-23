@@ -1,12 +1,12 @@
+/**
+ * Post Model
+ * Represents a user post/status update
+ */
+
 import mongoose from 'mongoose'
 
-const commentSchema = new mongoose.Schema(
+const postSchema = new mongoose.Schema(
   {
-    postId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Post',
-      required: true,
-    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -16,22 +16,30 @@ const commentSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    replies: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Comment',
-      },
-    ],
+    imgUrl: {
+      type: String,
+      default: '',
+    },
     likes: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
       },
     ],
+    comments: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Comment',
+      },
+    ],
+    shares: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,
   }
 )
 
-export const Comment = mongoose.model('Comment', commentSchema)
+export const Post = mongoose.model('Post', postSchema)

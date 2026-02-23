@@ -1,3 +1,8 @@
+/**
+ * Message Model
+ * Represents a message in a chat
+ */
+
 import mongoose from 'mongoose'
 
 const messageSchema = new mongoose.Schema(
@@ -7,12 +12,12 @@ const messageSchema = new mongoose.Schema(
       ref: 'Chat',
       required: true,
     },
-    from: {
+    senderId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    to: {
+    recipientId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
@@ -20,6 +25,10 @@ const messageSchema = new mongoose.Schema(
     txt: {
       type: String,
       required: true,
+    },
+    isRead: {
+      type: Boolean,
+      default: false,
     },
   },
   {

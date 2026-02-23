@@ -1,30 +1,34 @@
+/**
+ * Activity Model
+ * Represents user activities and notifications
+ */
+
 import mongoose from 'mongoose'
 
 const activitySchema = new mongoose.Schema(
   {
     type: {
       type: String,
-      enum: ['like', 'comment', 'connection-request', 'message'],
+      enum: ['like', 'comment', 'connection', 'message'],
       required: true,
     },
-    actor: {
+    createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    targetUser: {
+    createdTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
     },
-    targetId: {
-      type: String,
-      default: '',
+    postId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Post',
     },
-    targetType: {
-      type: String,
-      enum: ['post', 'comment', 'chat'],
-      default: '',
+    chatId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Chat',
     },
     isRead: {
       type: Boolean,

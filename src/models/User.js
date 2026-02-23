@@ -1,5 +1,10 @@
+/**
+ * User Model
+ * Represents a user in the system
+ */
+
 import mongoose from 'mongoose'
-import { hashPassword } from '../lib/auth.js'
+import { hashPassword } from '../utils/auth.js'
 
 const userSchema = new mongoose.Schema(
   {
@@ -14,21 +19,17 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      trim: true,
-      lowercase: true,
+      match: /.+\@.+\..+/,
     },
     password: {
       type: String,
       required: true,
       minlength: 6,
+      select: false, // Don't return password by default
     },
     fullname: {
       type: String,
-      default: '',
-    },
-    imgUrl: {
-      type: String,
-      default: 'https://api.dicebear.com/7.x/avataaars/svg?seed=default',
+      required: true,
     },
     bio: {
       type: String,
@@ -43,6 +44,10 @@ const userSchema = new mongoose.Schema(
       default: '',
     },
     website: {
+      type: String,
+      default: '',
+    },
+    imgUrl: {
       type: String,
       default: '',
     },
@@ -66,11 +71,12 @@ const userSchema = new mongoose.Schema(
   }
 )
 
-// Hash password before saving
+// Hash password before saving (only if modified)
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next()
   }
+
   try {
     this.password = await hashPassword(this.password)
     next()
@@ -79,11 +85,11 @@ userSchema.pre('save', async function (next) {
   }
 })
 
-// Remove password from user object
+// Remove password from JSON output
 userSchema.methods.toJSON = function () {
-  const user = this.toObject()
-  delete user.password
-  return user
+  const obj = this.toObject()
+  delete obj.password
+  return obj
 }
 
 export const User = mongoose.model('User', userSchema)
