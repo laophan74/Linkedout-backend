@@ -142,13 +142,7 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Invalid comment ID', 400)
     }
 
-    const { txt } = req.body
-
-    // Validate input
-    const validation = validateCommentUpdate({ txt })
-    if (!validation.isValid) {
-      return sendError(res, 'Validation failed', 400, { errors: validation.errors })
-    }
+    const { txt, replies } = req.body
 
     const comment = await Comment.findById(req.params.id)
 
@@ -156,13 +150,26 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Comment not found', 404)
     }
 
-    // Check authorization
-    if (comment.createdBy.toString() !== req.user._id.toString()) {
+    // Check authorization for text updates
+    if (txt && comment.createdBy.toString() !== req.user._id.toString()) {
       return sendError(res, 'Not authorized to update this comment', 403)
     }
 
-    comment.txt = txt
+    if (txt) {
+      // Validate input
+      const validation = validateCommentUpdate({ txt })
+      if (!validation.isValid) {
+        return sendError(res, 'Validation failed', 400, { errors: validation.errors })
+      }
+      comment.txt = txt
+    }
+
+    if (replies) {
+      comment.replies = replies
+    }
+
     await comment.save()
+    await comment.populate('createdBy', 'username fullname imgUrl')
 
     logger.info(`Comment updated: ${req.params.id}`)
 
