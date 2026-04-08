@@ -14,7 +14,7 @@ const router = express.Router()
 
 /**
  * GET /api/post
- * Get all posts with pagination
+ * Get all posts with pagination and optional filtering
  */
 router.get('/', async (req, res, next) => {
   try {
@@ -22,7 +22,26 @@ router.get('/', async (req, res, next) => {
     const limit = Math.min(100, parseInt(req.query.limit) || 10)
     const skip = (page - 1) * limit
 
-    const posts = await Post.find()
+    // Build filter object from query parameters
+    const filter = {}
+    
+    // Filter by post ID
+    if (req.query._id) {
+      if (!mongoose.Types.ObjectId.isValid(req.query._id)) {
+        return sendError(res, 'Invalid post ID', 400)
+      }
+      filter._id = req.query._id
+    }
+    
+    // Filter by user ID (createdBy)
+    if (req.query.userId) {
+      if (!mongoose.Types.ObjectId.isValid(req.query.userId)) {
+        return sendError(res, 'Invalid user ID', 400)
+      }
+      filter.createdBy = req.query.userId
+    }
+
+    const posts = await Post.find(filter)
       .populate('createdBy', 'username fullname imgUrl')
       .populate({
         path: 'comments',
@@ -33,7 +52,7 @@ router.get('/', async (req, res, next) => {
       .limit(limit)
       .sort({ createdAt: -1 })
 
-    const total = await Post.countDocuments()
+    const total = await Post.countDocuments(filter)
 
     sendPaginated(res, posts, total, page, limit)
   } catch (error) {
