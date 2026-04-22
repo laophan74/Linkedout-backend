@@ -1,9 +1,4 @@
-/**
- * User Model
- * Represents a user in the system
- */
-
-import mongoose from 'mongoose'
+﻿import mongoose from 'mongoose'
 import { hashPassword } from '../utils/auth.js'
 
 const userSchema = new mongoose.Schema(
@@ -25,27 +20,66 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
-      select: false, // Don't return password by default
+      select: false,
     },
     fullname: {
       type: String,
       required: true,
+      trim: true,
+    },
+    additionalName: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 50,
+    },
+    pronouns: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 30,
+    },
+    headline: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 220,
+    },
+    profession: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 220,
     },
     bio: {
       type: String,
       default: '',
+      trim: true,
+      maxlength: 500,
     },
     phone: {
       type: String,
       default: '',
+      trim: true,
+      maxlength: 40,
     },
     address: {
       type: String,
       default: '',
+      trim: true,
+      maxlength: 120,
     },
     website: {
       type: String,
       default: '',
+      trim: true,
+      maxlength: 150,
+    },
+    bg: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: 280,
     },
     imgUrl: {
       type: String,
@@ -71,7 +105,6 @@ const userSchema = new mongoose.Schema(
   }
 )
 
-// Hash password before saving (only if modified)
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
     return next()
@@ -85,7 +118,6 @@ userSchema.pre('save', async function (next) {
   }
 })
 
-// Remove password from JSON output
 userSchema.methods.toJSON = function () {
   const obj = this.toObject()
   delete obj.password

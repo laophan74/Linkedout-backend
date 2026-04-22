@@ -1,21 +1,14 @@
-/**
- * User Validators
- * Centralized validation for user-related data
- */
-
-export const validateEmail = (email) => {
+﻿export const validateEmail = (email) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email)
 }
 
 export const validateUsername = (username) => {
-  // 3-20 characters, alphanumeric + underscore
   const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/
   return usernameRegex.test(username)
 }
 
 export const validatePassword = (password) => {
-  // Min 6 characters
   return password && password.length >= 6
 }
 
@@ -76,8 +69,36 @@ export const validateUserUpdate = (data) => {
     errors.fullname = 'Full name cannot be empty'
   }
 
+  if (data.additionalName !== undefined && data.additionalName.length > 50) {
+    errors.additionalName = 'Additional name must be less than 50 characters'
+  }
+
+  if (data.pronouns !== undefined && data.pronouns.length > 30) {
+    errors.pronouns = 'Pronouns must be less than 30 characters'
+  }
+
+  if (data.headline !== undefined && data.headline.length > 220) {
+    errors.headline = 'Headline must be less than 220 characters'
+  }
+
+  if (data.profession !== undefined && data.profession.length > 220) {
+    errors.profession = 'Profession must be less than 220 characters'
+  }
+
   if (data.bio !== undefined && data.bio && data.bio.length > 500) {
     errors.bio = 'Bio must be less than 500 characters'
+  }
+
+  if (data.address !== undefined && data.address.length > 120) {
+    errors.address = 'Location must be less than 120 characters'
+  }
+
+  if (data.phone !== undefined && data.phone.length > 40) {
+    errors.phone = 'Phone must be less than 40 characters'
+  }
+
+  if (data.bg !== undefined && data.bg.length > 280) {
+    errors.bg = 'Background image URL must be less than 280 characters'
   }
 
   if (data.website !== undefined && data.website && !isValidUrl(data.website)) {

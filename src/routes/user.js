@@ -1,8 +1,4 @@
-/**
- * User Routes
- */
-
-import express from 'express'
+﻿import express from 'express'
 import mongoose from 'mongoose'
 import { User } from '../models/User.js'
 import { authMiddleware } from '../middleware/auth.js'
@@ -12,10 +8,6 @@ import { validateUserUpdate } from '../validators/userValidator.js'
 
 const router = express.Router()
 
-/**
- * GET /api/user
- * Get all users with pagination
- */
 router.get('/', async (req, res, next) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1)
@@ -24,7 +16,7 @@ router.get('/', async (req, res, next) => {
 
     const users = await User.find()
       .select('-password')
-      .populate('connections', 'fullname imgUrl')
+      .populate('connections', 'fullname imgUrl headline profession bio')
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })
@@ -38,10 +30,6 @@ router.get('/', async (req, res, next) => {
   }
 })
 
-/**
- * GET /api/user/:id
- * Get user by ID
- */
 router.get('/:id', async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -50,7 +38,7 @@ router.get('/:id', async (req, res, next) => {
 
     const user = await User.findById(req.params.id)
       .select('-password')
-      .populate('connections', 'fullname imgUrl')
+      .populate('connections', 'fullname imgUrl headline profession bio')
 
     if (!user) {
       return sendError(res, 'User not found', 404)
@@ -63,16 +51,11 @@ router.get('/:id', async (req, res, next) => {
   }
 })
 
-/**
- * GET /api/user/profile/me
- * Get logged-in user profile (protected)
- * ⚠️ MUST be before GET /:id to avoid route collision
- */
 router.get('/profile/me', authMiddleware, async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id)
       .select('-password')
-      .populate('connections', 'fullname imgUrl')
+      .populate('connections', 'fullname imgUrl headline profession bio')
 
     if (!user) {
       return sendError(res, 'User not found', 404)
@@ -85,33 +68,33 @@ router.get('/profile/me', authMiddleware, async (req, res, next) => {
   }
 })
 
-/**
- * PUT /api/user/:id
- * Update user (protected)
- * Only allow users to update their own profile
- */
 router.put('/:id', authMiddleware, async (req, res, next) => {
   try {
-    // Check authorization
     if (req.user._id.toString() !== req.params.id) {
       return sendError(res, 'Not authorized to update this profile', 403)
     }
 
-    // Validate input
     const validation = validateUserUpdate(req.body)
     if (!validation.isValid) {
       return sendError(res, 'Validation failed', 400, { errors: validation.errors })
     }
 
     const updates = { ...req.body }
-    // Prevent password/email updates through this endpoint
     delete updates.password
     delete updates.email
+    delete updates.connections
+    delete updates.username
+
+    if (typeof updates.headline === 'string' && !updates.profession) {
+      updates.profession = updates.headline
+    }
 
     const user = await User.findByIdAndUpdate(req.params.id, updates, {
       new: true,
       runValidators: true,
-    }).select('-password')
+    })
+      .select('-password')
+      .populate('connections', 'fullname imgUrl headline profession bio')
 
     if (!user) {
       return sendError(res, 'User not found', 404)
@@ -126,13 +109,8 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
   }
 })
 
-/**
- * DELETE /api/user/:id
- * Delete user (protected)
- */
 router.delete('/:id', authMiddleware, async (req, res, next) => {
   try {
-    // Check authorization
     if (req.user._id.toString() !== req.params.id) {
       return sendError(res, 'Not authorized to delete this profile', 403)
     }
@@ -152,10 +130,6 @@ router.delete('/:id', authMiddleware, async (req, res, next) => {
   }
 })
 
-/**
- * GET /api/user/:id/connections
- * Get user's connections
- */
 router.get('/:id/connections', async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -164,7 +138,7 @@ router.get('/:id/connections', async (req, res, next) => {
 
     const user = await User.findById(req.params.id)
       .select('connections')
-      .populate('connections', 'username fullname imgUrl bio')
+      .populate('connections', 'username fullname imgUrl headline profession bio')
 
     if (!user) {
       return sendError(res, 'User not found', 404)
@@ -177,10 +151,6 @@ router.get('/:id/connections', async (req, res, next) => {
   }
 })
 
-/**
- * POST /api/user/:id/connect
- * Add a connection (protected)
- */
 router.post('/:id/connect', authMiddleware, async (req, res, next) => {
   try {
     const userId = req.user._id
@@ -201,12 +171,10 @@ router.post('/:id/connect', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Target user not found', 404)
     }
 
-    // Check if already connected
     if (user.connections.includes(targetId)) {
       return sendError(res, 'Already connected with this user', 400)
     }
 
-    // Add connection
     user.connections.push(targetId)
     await user.save()
 
@@ -219,10 +187,6 @@ router.post('/:id/connect', authMiddleware, async (req, res, next) => {
   }
 })
 
-/**
- * DELETE /api/user/:id/disconnect
- * Remove a connection (protected)
- */
 router.delete('/:id/disconnect', authMiddleware, async (req, res, next) => {
   try {
     const userId = req.user._id
@@ -234,7 +198,6 @@ router.delete('/:id/disconnect', authMiddleware, async (req, res, next) => {
 
     const user = await User.findById(userId)
 
-    // Remove connection
     user.connections = user.connections.filter(
       (connId) => connId.toString() !== targetId
     )
