@@ -52,6 +52,11 @@ export const config = {
   
   // Logging
   logLevel: process.env.LOG_LEVEL || 'info',
+
+  // Cloudinary
+  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || '',
   
   // Utilities
   isDevelopment: () => config.nodeEnv === 'development',

@@ -106,12 +106,17 @@ router.post('/', authMiddleware, async (req, res, next) => {
 
     const post = new Post({
       createdBy: req.user._id,
-      txt,
+      txt: typeof txt === 'string' ? txt.trim() : '',
       imgUrl: imgUrl || '',
     })
 
     await post.save()
     await post.populate('createdBy', 'username fullname imgUrl')
+    await post.populate('likes', 'username fullname imgUrl')
+    await post.populate({
+      path: 'comments',
+      populate: { path: 'createdBy', select: 'username fullname imgUrl' },
+    })
 
     logger.info(`Post created by user ${req.user._id}`)
 
@@ -149,11 +154,21 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Not authorized to update this post', 403)
     }
 
-    const { txt, imgUrl } = req.body
-    if (txt) post.txt = txt
-    if (imgUrl !== undefined) post.imgUrl = imgUrl
+    const nextTxt =
+      txt !== undefined ? (typeof txt === 'string' ? txt.trim() : '') : post.txt
+    const nextImgUrl =
+      imgUrl !== undefined ? (typeof imgUrl === 'string' ? imgUrl.trim() : '') : post.imgUrl
+
+    post.txt = nextTxt
+    post.imgUrl = nextImgUrl
 
     await post.save()
+    await post.populate('createdBy', 'username fullname imgUrl')
+    await post.populate('likes', 'username fullname imgUrl')
+    await post.populate({
+      path: 'comments',
+      populate: { path: 'createdBy', select: 'username fullname imgUrl' },
+    })
 
     logger.info(`Post updated: ${req.params.id}`)
 
@@ -224,6 +239,12 @@ router.put('/:id/like', authMiddleware, async (req, res, next) => {
     }
 
     await post.save()
+    await post.populate('createdBy', 'username fullname imgUrl')
+    await post.populate('likes', 'username fullname imgUrl')
+    await post.populate({
+      path: 'comments',
+      populate: { path: 'createdBy', select: 'username fullname imgUrl' },
+    })
 
     sendSuccess(res, post, 'Post like updated')
   } catch (error) {

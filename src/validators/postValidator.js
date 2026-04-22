@@ -4,14 +4,16 @@
 
 export const validatePostCreate = (data) => {
   const errors = {}
+  const txt = typeof data.txt === 'string' ? data.txt.trim() : ''
+  const imgUrl = typeof data.imgUrl === 'string' ? data.imgUrl.trim() : ''
 
-  if (!data.txt || data.txt.trim().length === 0) {
-    errors.txt = 'Post content is required'
-  } else if (data.txt.length > 5000) {
+  if (!txt && !imgUrl) {
+    errors.txt = 'Post content or image is required'
+  } else if (txt.length > 5000) {
     errors.txt = 'Post content must be less than 5000 characters'
   }
 
-  if (data.imgUrl && data.imgUrl && !isValidUrl(data.imgUrl)) {
+  if (imgUrl && !isValidUrl(imgUrl)) {
     errors.imgUrl = 'Invalid image URL'
   }
 
@@ -23,17 +25,27 @@ export const validatePostCreate = (data) => {
 
 export const validatePostUpdate = (data) => {
   const errors = {}
+  const txt = typeof data.txt === 'string' ? data.txt.trim() : data.txt
+  const imgUrl = typeof data.imgUrl === 'string' ? data.imgUrl.trim() : data.imgUrl
 
   if (data.txt !== undefined) {
-    if (data.txt.trim().length === 0) {
-      errors.txt = 'Post content cannot be empty'
-    } else if (data.txt.length > 5000) {
+    if (typeof txt !== 'string') {
+      errors.txt = 'Post content must be text'
+    } else if (txt.length > 5000) {
       errors.txt = 'Post content must be less than 5000 characters'
     }
   }
 
-  if (data.imgUrl && !isValidUrl(data.imgUrl)) {
+  if (imgUrl && !isValidUrl(imgUrl)) {
     errors.imgUrl = 'Invalid image URL'
+  }
+
+  if (data.txt !== undefined || data.imgUrl !== undefined) {
+    const hasTxt = typeof txt === 'string' && txt.length > 0
+    const hasImg = typeof imgUrl === 'string' && imgUrl.length > 0
+    if (!hasTxt && !hasImg) {
+      errors.txt = 'Post content or image is required'
+    }
   }
 
   return {
