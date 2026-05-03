@@ -47,6 +47,7 @@ export const config = {
     : [
         'http://localhost:3000',
         'http://localhost:3001',
+        'http://linkedout-frontend.vercel.app',
         'https://linkedout-frontend.vercel.app'
       ],
   

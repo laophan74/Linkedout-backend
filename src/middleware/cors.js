@@ -5,11 +5,30 @@
 
 import { config } from '../config/environment.js'
 
+function isAllowedOrigin(origin) {
+  if (!origin) return false
+  if (config.corsOrigins.includes(origin)) return true
+
+  try {
+    const requestedUrl = new URL(origin)
+    return config.corsOrigins.some((allowedOrigin) => {
+      try {
+        const allowedUrl = new URL(allowedOrigin)
+        return requestedUrl.hostname === allowedUrl.hostname
+      } catch (error) {
+        return false
+      }
+    })
+  } catch (error) {
+    return false
+  }
+}
+
 export function corsMiddleware(req, res, next) {
   const origin = req.headers.origin
   
   // Check if origin is in whitelist
-  if (config.corsOrigins.includes(origin)) {
+  if (isAllowedOrigin(origin)) {
     res.header('Access-Control-Allow-Origin', origin)
   } else if (config.isDevelopment()) {
     // In development, allow any localhost origin
