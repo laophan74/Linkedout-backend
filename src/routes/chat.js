@@ -14,9 +14,13 @@ import { validateChatCreate, validateMessageCreate, validateMessageUpdate } from
 const router = express.Router()
 
 const isParticipant = (chat, userId) => {
-  return chat?.participants?.some((participantId) => (
-    participantId.toString() === userId.toString()
-  ))
+  const normalizedUserId = userId?.toString()
+  if (!normalizedUserId) return false
+
+  return chat?.participants?.some((participant) => {
+    const participantId = participant?._id || participant
+    return participantId?.toString() === normalizedUserId
+  })
 }
 
 /**
