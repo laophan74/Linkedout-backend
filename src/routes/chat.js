@@ -13,6 +13,12 @@ import { validateChatCreate, validateMessageCreate, validateMessageUpdate } from
 
 const router = express.Router()
 
+const isParticipant = (chat, userId) => {
+  return chat?.participants?.some((participantId) => (
+    participantId.toString() === userId.toString()
+  ))
+}
+
 /**
  * GET /api/chat
  * Get all chats for logged-in user (protected)
@@ -39,6 +45,10 @@ router.get('/', authMiddleware, async (req, res, next) => {
  */
 router.get('/:id', authMiddleware, async (req, res, next) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return sendError(res, 'Invalid chat ID', 400)
+    }
+
     const chat = await Chat.findById(req.params.id)
       .populate('participants', 'username fullname imgUrl')
       .populate({
@@ -48,6 +58,10 @@ router.get('/:id', authMiddleware, async (req, res, next) => {
 
     if (!chat) {
       return sendError(res, 'Chat not found', 404)
+    }
+
+    if (!isParticipant(chat, req.user._id)) {
+      return sendError(res, 'Not authorized to access this chat', 403)
     }
 
     sendSuccess(res, chat)
@@ -73,6 +87,10 @@ router.post('/', authMiddleware, async (req, res, next) => {
 
     if (!mongoose.Types.ObjectId.isValid(recipientId)) {
       return sendError(res, 'Invalid recipient ID', 400)
+    }
+
+    if (recipientId === req.user._id.toString()) {
+      return sendError(res, 'Cannot create a chat with yourself', 400)
     }
 
     // Find existing chat
@@ -117,11 +135,24 @@ router.post('/:id/message', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Validation failed', 400, { errors: validation.errors })
     }
 
+    const chat = await Chat.findById(req.params.id)
+    if (!chat) {
+      return sendError(res, 'Chat not found', 404)
+    }
+
+    if (!isParticipant(chat, req.user._id)) {
+      return sendError(res, 'Not authorized to send messages in this chat', 403)
+    }
+
+    if (!isParticipant(chat, recipientId)) {
+      return sendError(res, 'Recipient is not a participant in this chat', 400)
+    }
+
     const message = new Message({
       chatId: req.params.id,
       senderId: req.user._id,
       recipientId,
-      txt,
+      txt: txt.trim(),
     })
 
     await message.save()
@@ -129,6 +160,7 @@ router.post('/:id/message', authMiddleware, async (req, res, next) => {
     // Update chat's last message
     await Chat.findByIdAndUpdate(req.params.id, {
       lastMessage: message._id,
+      $addToSet: { messages: message._id },
     })
 
     logger.info(`Message sent in chat ${req.params.id}`)
@@ -153,6 +185,15 @@ router.get('/:id/messages', authMiddleware, async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(100, parseInt(req.query.limit) || 20)
     const skip = (page - 1) * limit
+
+    const chat = await Chat.findById(req.params.id).select('participants')
+    if (!chat) {
+      return sendError(res, 'Chat not found', 404)
+    }
+
+    if (!isParticipant(chat, req.user._id)) {
+      return sendError(res, 'Not authorized to access this chat', 403)
+    }
 
     const messages = await Message.find({ chatId: req.params.id })
       .populate('senderId', 'username fullname imgUrl')
@@ -199,12 +240,17 @@ router.put('/:id/message/:msgId', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Message does not belong to this chat', 400)
     }
 
+    const chat = await Chat.findById(req.params.id).select('participants')
+    if (!isParticipant(chat, req.user._id)) {
+      return sendError(res, 'Not authorized to access this chat', 403)
+    }
+
     // Check authorization
     if (message.senderId.toString() !== req.user._id.toString()) {
       return sendError(res, 'Not authorized to update this message', 403)
     }
 
-    message.txt = txt
+    message.txt = txt.trim()
     await message.save()
 
     logger.info(`Message updated: ${req.params.msgId}`)
@@ -237,16 +283,23 @@ router.delete('/:id/message/:msgId', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Message does not belong to this chat', 400)
     }
 
+    const chat = await Chat.findById(req.params.id).select('participants lastMessage')
+    if (!isParticipant(chat, req.user._id)) {
+      return sendError(res, 'Not authorized to access this chat', 403)
+    }
+
     // Check authorization
     if (message.senderId.toString() !== req.user._id.toString()) {
       return sendError(res, 'Not authorized to delete this message', 403)
     }
 
     await Message.findByIdAndDelete(req.params.msgId)
+    await Chat.findByIdAndUpdate(req.params.id, {
+      $pull: { messages: req.params.msgId },
+    })
 
     // If this was the last message, update chat
-    const chatLastMsg = await Chat.findById(req.params.id).select('lastMessage')
-    if (chatLastMsg?.lastMessage?.toString() === req.params.msgId) {
+    if (chat?.lastMessage?.toString() === req.params.msgId) {
       const lastMessage = await Message.findOne({ chatId: req.params.id }).sort({ createdAt: -1 })
       await Chat.findByIdAndUpdate(req.params.id, {
         lastMessage: lastMessage?._id || null,
@@ -279,7 +332,7 @@ router.delete('/:id', authMiddleware, async (req, res, next) => {
     }
 
     // Check authorization - user must be participant
-    if (!chat.participants.includes(req.user._id)) {
+    if (!isParticipant(chat, req.user._id)) {
       return sendError(res, 'Not authorized to delete this chat', 403)
     }
 
