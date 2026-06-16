@@ -70,4 +70,7 @@ const commentSchema = new mongoose.Schema(
   }
 )
 
+commentSchema.index({ postId: 1, createdAt: -1 })
+commentSchema.index({ createdBy: 1, createdAt: -1 })
+
 export const Comment = mongoose.model('Comment', commentSchema)

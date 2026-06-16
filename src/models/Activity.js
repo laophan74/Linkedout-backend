@@ -40,4 +40,7 @@ const activitySchema = new mongoose.Schema(
   }
 )
 
+activitySchema.index({ createdTo: 1, isRead: 1, createdAt: -1 })
+activitySchema.index({ createdBy: 1, createdAt: -1 })
+
 export const Activity = mongoose.model('Activity', activitySchema)

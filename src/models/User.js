@@ -118,6 +118,9 @@ userSchema.pre('save', async function (next) {
   }
 })
 
+userSchema.index({ fullname: 'text', username: 'text', headline: 'text', profession: 'text', bio: 'text' })
+userSchema.index({ createdAt: -1 })
+
 userSchema.methods.toJSON = function () {
   const obj = this.toObject()
   delete obj.password

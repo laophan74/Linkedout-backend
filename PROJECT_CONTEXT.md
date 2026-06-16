@@ -67,6 +67,10 @@ Core backend routes:
   - new connection
   - message sent
 - CORS now allows configured origins and LinkedOut Vercel subdomains.
+- Added search support for posts (`txt`) and users (`txt`).
+- Added useful MongoDB indexes for posts, users, activities, chats, messages, and comments.
+- Chat list can preload recent messages with `includeMessages=true&messageLimit=20`, reducing frontend N+1 requests.
+- Added `PUT /api/chat/read-all/messages` to mark message activities and received messages as read without marking every notification.
 
 ## Messaging And Notifications Policy
 
@@ -76,6 +80,7 @@ Expected behavior:
 
 - Messages are sent through `/api/chat/:id/message`.
 - Message list is loaded through REST.
+- Chat list can preload recent messages through `/api/chat?includeMessages=true`.
 - Notifications are loaded through `/api/activity`.
 - Unread counts are based on stored `Activity.isRead`.
 - It is acceptable for notification/message state to update on page navigation or manual refresh.
@@ -95,6 +100,15 @@ Also checked route files:
 - `src/routes/activity.js`
 
 Serverless-style import check passed with `VERCEL=1`.
+
+Latest checks passed after performance work:
+
+- `node --check src/server.js`
+- `node --check src/routes/post.js`
+- `node --check src/routes/user.js`
+- `node --check src/routes/chat.js`
+- model syntax checks
+- serverless-style import with `VERCEL=1`
 
 ## Recommended Next Steps
 

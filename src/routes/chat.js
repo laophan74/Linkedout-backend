@@ -6,6 +6,7 @@ import express from 'express'
 import mongoose from 'mongoose'
 import { Chat } from '../models/Chat.js'
 import { Message } from '../models/Message.js'
+import { Activity } from '../models/Activity.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js'
 import { logger } from '../utils/logger.js'
@@ -30,12 +31,27 @@ const isParticipant = (chat, userId) => {
  */
 router.get('/', authMiddleware, async (req, res, next) => {
   try {
+    const includeMessages = req.query.includeMessages === 'true'
+    const messageLimit = Math.min(50, Math.max(1, parseInt(req.query.messageLimit) || 20))
+
     const chats = await Chat.find({
       participants: req.user._id,
     })
       .populate('participants', 'username fullname imgUrl')
       .populate('lastMessage')
       .sort({ updatedAt: -1 })
+
+    if (includeMessages) {
+      await Chat.populate(chats, {
+        path: 'messages',
+        options: { sort: { createdAt: -1 }, perDocumentLimit: messageLimit },
+        populate: { path: 'senderId recipientId', select: 'username fullname imgUrl' },
+      })
+
+      chats.forEach((chat) => {
+        chat.messages = [...(chat.messages || [])].reverse()
+      })
+    }
 
     sendSuccess(res, chats)
   } catch (error) {
@@ -219,6 +235,29 @@ router.get('/:id/messages', authMiddleware, async (req, res, next) => {
     sendPaginated(res, messages.reverse(), total, page, limit)
   } catch (error) {
     logger.error(`Get messages error: ${error.message}`)
+    next(error)
+  }
+})
+
+/**
+ * PUT /api/chat/read-all
+ * Mark all current user's received messages and message activities as read (protected)
+ */
+router.put('/read-all/messages', authMiddleware, async (req, res, next) => {
+  try {
+    await Message.updateMany(
+      { recipientId: req.user._id, isRead: false },
+      { isRead: true }
+    )
+
+    await Activity.updateMany(
+      { createdTo: req.user._id, type: 'message', isRead: false },
+      { isRead: true }
+    )
+
+    sendSuccess(res, null, 'Messages marked as read')
+  } catch (error) {
+    logger.error(`Mark messages read error: ${error.message}`)
     next(error)
   }
 })

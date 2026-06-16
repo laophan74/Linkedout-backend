@@ -14,15 +14,28 @@ router.get('/', async (req, res, next) => {
     const page = Math.max(1, parseInt(req.query.page) || 1)
     const limit = Math.min(100, parseInt(req.query.limit) || 10)
     const skip = (page - 1) * limit
+    const filter = {}
+    const txt = req.query.txt?.toString().trim()
 
-    const users = await User.find()
+    if (txt) {
+      const searchRegex = new RegExp(txt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i')
+      filter.$or = [
+        { fullname: searchRegex },
+        { username: searchRegex },
+        { headline: searchRegex },
+        { profession: searchRegex },
+        { bio: searchRegex },
+      ]
+    }
+
+    const users = await User.find(filter)
       .select('-password')
       .populate('connections', 'fullname imgUrl headline profession bio')
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 })
 
-    const total = await User.countDocuments()
+    const total = await User.countDocuments(filter)
 
     sendPaginated(res, users, total, page, limit)
   } catch (error) {

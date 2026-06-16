@@ -42,6 +42,13 @@ router.get('/', async (req, res, next) => {
       filter.createdBy = req.query.userId
     }
 
+    if (req.query.txt) {
+      const txt = req.query.txt.toString().trim()
+      if (txt) {
+        filter.txt = { $regex: txt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $options: 'i' }
+      }
+    }
+
     const posts = await Post.find(filter)
       .populate('createdBy', 'username fullname imgUrl')
       .populate({
