@@ -8,6 +8,7 @@ import { Post } from '../models/Post.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js'
 import { logger } from '../utils/logger.js'
+import { createActivity } from '../utils/activity.js'
 import { validatePostCreate, validatePostUpdate } from '../validators/postValidator.js'
 
 const router = express.Router()
@@ -143,6 +144,7 @@ router.put('/:id', authMiddleware, async (req, res, next) => {
       return sendError(res, 'Validation failed', 400, { errors: validation.errors })
     }
 
+    const { txt, imgUrl } = req.body
     const post = await Post.findById(req.params.id)
 
     if (!post) {
@@ -236,6 +238,12 @@ router.put('/:id/like', authMiddleware, async (req, res, next) => {
     } else {
       // Like
       post.likes.push(userId)
+      await createActivity({
+        type: 'like',
+        createdBy: userId,
+        createdTo: post.createdBy,
+        postId: post._id,
+      })
     }
 
     await post.save()

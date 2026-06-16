@@ -4,6 +4,7 @@ import { User } from '../models/User.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js'
 import { logger } from '../utils/logger.js'
+import { createActivity } from '../utils/activity.js'
 import { validateUserUpdate } from '../validators/userValidator.js'
 
 const router = express.Router()
@@ -30,6 +31,23 @@ router.get('/', async (req, res, next) => {
   }
 })
 
+router.get('/profile/me', authMiddleware, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .select('-password')
+      .populate('connections', 'fullname imgUrl headline profession bio')
+
+    if (!user) {
+      return sendError(res, 'User not found', 404)
+    }
+
+    sendSuccess(res, user)
+  } catch (error) {
+    logger.error(`Get profile error: ${error.message}`)
+    next(error)
+  }
+})
+
 router.get('/:id', async (req, res, next) => {
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -47,23 +65,6 @@ router.get('/:id', async (req, res, next) => {
     sendSuccess(res, user)
   } catch (error) {
     logger.error(`Get user error: ${error.message}`)
-    next(error)
-  }
-})
-
-router.get('/profile/me', authMiddleware, async (req, res, next) => {
-  try {
-    const user = await User.findById(req.user._id)
-      .select('-password')
-      .populate('connections', 'fullname imgUrl headline profession bio')
-
-    if (!user) {
-      return sendError(res, 'User not found', 404)
-    }
-
-    sendSuccess(res, user)
-  } catch (error) {
-    logger.error(`Get profile error: ${error.message}`)
     next(error)
   }
 })
@@ -177,6 +178,11 @@ router.post('/:id/connect', authMiddleware, async (req, res, next) => {
 
     user.connections.push(targetId)
     await user.save()
+    await createActivity({
+      type: 'connection',
+      createdBy: userId,
+      createdTo: targetId,
+    })
 
     logger.info(`User ${userId} connected with ${targetId}`)
 

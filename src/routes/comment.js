@@ -9,6 +9,7 @@ import { Post } from '../models/Post.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js'
 import { logger } from '../utils/logger.js'
+import { createActivity } from '../utils/activity.js'
 import { validateCommentCreate, validateCommentUpdate } from '../validators/commentValidator.js'
 
 const router = express.Router()
@@ -118,9 +119,15 @@ router.post('/', authMiddleware, async (req, res, next) => {
     await comment.save()
     await comment.populate('createdBy', 'username fullname imgUrl')
 
-    // Add comment to post
-    await Post.findByIdAndUpdate(postId, {
+    const post = await Post.findByIdAndUpdate(postId, {
       $push: { comments: comment._id },
+    })
+
+    await createActivity({
+      type: 'comment',
+      createdBy: req.user._id,
+      createdTo: post?.createdBy,
+      postId,
     })
 
     logger.info(`Comment created on post ${postId}`)

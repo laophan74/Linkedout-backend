@@ -37,6 +37,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
   try {
     const activities = await Activity.find({ createdTo: req.user._id })
       .populate('createdBy', 'username fullname imgUrl')
+      .populate('createdTo', 'username fullname imgUrl')
       .sort({ createdAt: -1 })
 
     sendSuccess(res, activities)
@@ -54,6 +55,10 @@ router.post('/', authMiddleware, async (req, res, next) => {
   try {
     const { type, createdTo, postId, chatId } = req.body
 
+    if (createdTo?.toString() === req.user._id.toString()) {
+      return sendSuccess(res, null, 'Self activity skipped', 200)
+    }
+
     const activity = new Activity({
       type,
       createdBy: req.user._id,
@@ -64,6 +69,7 @@ router.post('/', authMiddleware, async (req, res, next) => {
 
     await activity.save()
     await activity.populate('createdBy', 'username fullname imgUrl')
+    await activity.populate('createdTo', 'username fullname imgUrl')
 
     logger.info(`Activity created: ${type}`)
 

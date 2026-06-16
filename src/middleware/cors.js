@@ -11,6 +11,13 @@ function isAllowedOrigin(origin) {
 
   try {
     const requestedUrl = new URL(origin)
+    if (
+      requestedUrl.hostname.endsWith('.vercel.app') &&
+      requestedUrl.hostname.toLowerCase().includes('linkedout')
+    ) {
+      return true
+    }
+
     return config.corsOrigins.some((allowedOrigin) => {
       try {
         const allowedUrl = new URL(allowedOrigin)

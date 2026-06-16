@@ -28,6 +28,15 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }))
 app.use(corsMiddleware)
 app.use(requestLogger)
 
+app.use('/api', async (req, res, next) => {
+  try {
+    await connectDatabase()
+    next()
+  } catch (error) {
+    next(error)
+  }
+})
+
 /**
  * Health Check Endpoint
  */
@@ -87,7 +96,8 @@ process.on('SIGTERM', () => {
   process.exit(0)
 })
 
-// Start server
-startServer()
+if (process.env.VERCEL !== '1') {
+  startServer()
+}
 
 export default app

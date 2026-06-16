@@ -9,6 +9,7 @@ import { Message } from '../models/Message.js'
 import { authMiddleware } from '../middleware/auth.js'
 import { sendSuccess, sendError, sendPaginated } from '../utils/response.js'
 import { logger } from '../utils/logger.js'
+import { createActivity } from '../utils/activity.js'
 import { validateChatCreate, validateMessageCreate, validateMessageUpdate } from '../validators/chatValidator.js'
 
 const router = express.Router()
@@ -165,6 +166,13 @@ router.post('/:id/message', authMiddleware, async (req, res, next) => {
     await Chat.findByIdAndUpdate(req.params.id, {
       lastMessage: message._id,
       $addToSet: { messages: message._id },
+    })
+
+    await createActivity({
+      type: 'message',
+      createdBy: req.user._id,
+      createdTo: recipientId,
+      chatId: req.params.id,
     })
 
     logger.info(`Message sent in chat ${req.params.id}`)
